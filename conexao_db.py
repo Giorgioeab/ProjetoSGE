@@ -73,8 +73,6 @@ if __name__ == "__main__":
     criar_tabela_turmas(conexao)
     criar_tabela_alunos_turmas(conexao)
 
-    # conexao.close()
-
 def testInsert(conexao, curso, turno, duracao):
     cursor=conexao.cursor()
     cursor.execute (f'''
@@ -83,11 +81,13 @@ def testInsert(conexao, curso, turno, duracao):
 
 def testSelect(conexao):
     cursor = conexao.cursor()
-    cursor.execute('''SELECT * FROM Cursos''')
+    cursor.execute('''SELECT * FROM Alunos''')
     linhasRetornadas = cursor.fetchall()
 
     for linha in linhasRetornadas:
         print(linha)
 
-testInsert(conexao, 'Juan','Manhã','12 Meses')
+
 testSelect(conexao)
+
+conexao.close()
