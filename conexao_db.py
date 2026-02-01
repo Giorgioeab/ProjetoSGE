@@ -1,93 +1,131 @@
-import sqlite3 as sql
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
-def conexao_banco():
-    conexao = sql.connect('SGE.db')
-    return conexao
+# Configuração do banco de dados
+DATABASE_URL = "sqlite:///SGE.db"
 
-# criando tabelas
+engine = create_engine(DATABASE_URL, echo=False)
+Base = declarative_base()
+Session = sessionmaker(bind=engine)
 
-def criar_tabela_alunos(conexao):
-    cursor = conexao.cursor()
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Alunos (
-    cpf INTEGER PRIMARY KEY,
-    nome TEXT NOT NULL,
-    data_nascimento TEXT NOT NULL,
-    nome_mae TEXT NOT NULL,
-    email TEXT NOT NULL,
-    telefone TEXT NOT NULL)
-    ''')
+# Definição das tabelas como modelos ORM
 
-def criar_tabela_professores(conexao):
-    cursor = conexao.cursor()
+class Aluno(Base):
+    __tablename__ = 'Alunos'
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Professores(
-    cpf INTEGER PRIMARY KEY,
-    nome TEXT NOT NULL,
-    data_nascimento TEXT NOT NULL,
-    nome_mae TEXT NOT NULL,
-    email TEXT NOT NULL,
-    telefone TEXT NOT NULL)
-    ''')
+    cpf = Column(Integer, primary_key=True)
+    nome = Column(String, nullable=False)
+    data_nascimento = Column(String, nullable=False)
+    nome_mae = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    telefone = Column(String, nullable=False)
 
-def criar_tabela_cursos(conexao):
-    cursor = conexao.cursor()
+    # Relacionamento com turmas
+    turmas = relationship("AlunoTurma", back_populates="aluno")
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Cursos(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome_curso TEXT NOT NULL,
-    turno TEXT NOT NULL,
-    duracao TEXT NOT NULL)
-    ''')
+    def __repr__(self):
+        return f"<Aluno(cpf={self.cpf}, nome='{self.nome}')>"
 
-def criar_tabela_turmas(conexao):
-    cursor = conexao.cursor()
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Turmas(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_curso INTEGER,
-    cpf_professor INTEGER,
-    FOREIGN KEY (id_curso) REFERENCES Cursos(id),
-    FOREIGN KEY (cpf_professor) REFERENCES Professores (cpf))
-    ''')
+class Professor(Base):
+    __tablename__ = 'Professores'
 
-def criar_tabela_alunos_turmas(conexao):
-    cursor = conexao.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Alunos_Turmas(
-    id_aluno INTEGER,
-    id_turma INTEGER,
-    FOREIGN KEY (id_aluno) REFERENCES Alunos(cpf),
-    FOREIGN KEY (id_turma) REFERENCES Turmas(id))
-    ''')
+    cpf = Column(Integer, primary_key=True)
+    nome = Column(String, nullable=False)
+    data_nascimento = Column(String, nullable=False)
+    nome_mae = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    telefone = Column(String, nullable=False)
+
+    # Relacionamento com turmas
+    turmas = relationship("Turma", back_populates="professor")
+
+    def __repr__(self):
+        return f"<Professor(cpf={self.cpf}, nome='{self.nome}')>"
+
+
+class Curso(Base):
+    __tablename__ = 'Cursos'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nome_curso = Column(String, nullable=False)
+    turno = Column(String, nullable=False)
+    duracao = Column(String, nullable=False)
+
+    # Relacionamento com turmas
+    turmas = relationship("Turma", back_populates="curso")
+
+    def __repr__(self):
+        return f"<Curso(id={self.id}, nome_curso='{self.nome_curso}')>"
+
+
+class Turma(Base):
+    __tablename__ = 'Turmas'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    id_curso = Column(Integer, ForeignKey('Cursos.id'))
+    cpf_professor = Column(Integer, ForeignKey('Professores.cpf'))
+
+    # Relacionamentos
+    curso = relationship("Curso", back_populates="turmas")
+    professor = relationship("Professor", back_populates="turmas")
+    alunos = relationship("AlunoTurma", back_populates="turma")
+
+    def __repr__(self):
+        return f"<Turma(id={self.id}, id_curso={self.id_curso})>"
+
+
+class AlunoTurma(Base):
+    __tablename__ = 'Alunos_Turmas'
+
+    id_aluno = Column(Integer, ForeignKey('Alunos.cpf'), primary_key=True)
+    id_turma = Column(Integer, ForeignKey('Turmas.id'), primary_key=True)
+
+    # Relacionamentos
+    aluno = relationship("Aluno", back_populates="turmas")
+    turma = relationship("Turma", back_populates="alunos")
+
+    def __repr__(self):
+        return f"<AlunoTurma(id_aluno={self.id_aluno}, id_turma={self.id_turma})>"
+
+
+# Funções auxiliares
+
+def criar_tabelas():
+    """Cria todas as tabelas no banco de dados."""
+    Base.metadata.create_all(engine)
+
+
+def obter_sessao():
+    """Retorna uma nova sessão do banco de dados."""
+    return Session()
+
+
+# Funções de teste
+
+def test_insert_curso(curso, turno, duracao):
+    """Insere um novo curso no banco de dados."""
+    session = obter_sessao()
+    novo_curso = Curso(nome_curso=curso, turno=turno, duracao=duracao)
+    session.add(novo_curso)
+    session.commit()
+    session.close()
+
+
+def test_select_alunos():
+    """Retorna todos os alunos do banco de dados."""
+    session = obter_sessao()
+    alunos = session.query(Aluno).all()
+    for aluno in alunos:
+        print(aluno)
+    session.close()
+    return alunos
+
 
 if __name__ == "__main__":
-    conexao=conexao_banco()
-    criar_tabela_alunos(conexao)
-    criar_tabela_professores(conexao)
-    criar_tabela_cursos(conexao)
-    criar_tabela_turmas(conexao)
-    criar_tabela_alunos_turmas(conexao)
-
-def testInsert(conexao, curso, turno, duracao):
-    cursor=conexao.cursor()
-    cursor.execute (f'''
-    INSERT INTO Cursos (nome_curso, turno, duracao) VALUES
-    ('{curso}', '{turno}', '{duracao}')''')
-
-def testSelect(conexao):
-    cursor = conexao.cursor()
-    cursor.execute('''SELECT * FROM Alunos''')
-    linhasRetornadas = cursor.fetchall()
-
-    for linha in linhasRetornadas:
-        print(linha)
-
-
-testSelect(conexao)
-
-conexao.close()
+    # Criar todas as tabelas
+    criar_tabelas()
+    
+    # Testar select de alunos
+    test_select_alunos()
