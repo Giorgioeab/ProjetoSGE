@@ -26,11 +26,33 @@ def tela_cadastro(root):
     lbl_titulo_pessoas = tk.Label(aba_pessoas, text="Cadastro de Pessoas")
     lbl_titulo_pessoas.pack()
 
+    # Label para mostrar status da verificação do CPF
+    lbl_status_cpf = tk.Label(aba_pessoas, text="", font=("Arial", 9))
+    
+    def verificar_cpf():
+        cpf = entry_cpf.get()
+        if not cpf:
+            lbl_status_cpf.config(text="Digite um CPF para verificar", fg="orange")
+            return
+        
+        existe, msg = verificar_cpf_existe(cpf)
+        if existe:
+            lbl_status_cpf.config(text=f"✗ {msg}", fg="red")
+        else:
+            lbl_status_cpf.config(text=f"✓ {msg}", fg="green")
+
     # Implemente os campos para cadastrar pessoas
     lbl_cpf = tk.Label(aba_pessoas, text="CPF:")
     lbl_cpf.pack()
-    entry_cpf = tk.Entry(aba_pessoas)
-    entry_cpf.pack()
+    
+    frame_cpf = tk.Frame(aba_pessoas)
+    frame_cpf.pack()
+    entry_cpf = tk.Entry(frame_cpf, width=20)
+    entry_cpf.pack(side=tk.LEFT, padx=(0, 5))
+    btn_verificar_cpf = tk.Button(frame_cpf, text="Verificar", command=verificar_cpf)
+    btn_verificar_cpf.pack(side=tk.LEFT)
+    
+    lbl_status_cpf.pack()
     
     lbl_nome = tk.Label(aba_pessoas, text="Nome:")
     lbl_nome.pack()
@@ -57,35 +79,105 @@ def tela_cadastro(root):
     entry_telefone = tk.Entry(aba_pessoas)
     entry_telefone.pack()
 
+    def mostrar_janela_confirmacao(tipo, dados):
+        """Mostra janela com os dados do cadastro realizado."""
+        janela_info = tk.Toplevel(tela_cadastro)
+        janela_info.title(f"Cadastro de {tipo} Realizado")
+        janela_info.geometry("400x300")
+        janela_info.grab_set()  # Torna a janela modal
+        
+        lbl_titulo = tk.Label(janela_info, text=f"✓ {tipo} cadastrado(a) com sucesso!", 
+                              font=("Arial", 12, "bold"), fg="green")
+        lbl_titulo.pack(pady=10)
+        
+        frame_dados = tk.Frame(janela_info)
+        frame_dados.pack(pady=10, padx=20, fill="both", expand=True)
+        
+        labels = ["CPF:", "Nome:", "Data de Nascimento:", "Nome da Mãe:", "Email:", "Telefone:"]
+        for i, (label, valor) in enumerate(zip(labels, dados)):
+            tk.Label(frame_dados, text=label, font=("Arial", 10, "bold"), anchor="w").grid(row=i, column=0, sticky="w", pady=2)
+            tk.Label(frame_dados, text=valor, anchor="w").grid(row=i, column=1, sticky="w", padx=10, pady=2)
+        
+        btn_ok = tk.Button(janela_info, text="OK", width=10, command=janela_info.destroy)
+        btn_ok.pack(pady=20)
+
+    def limpar_campos_pessoa():
+        """Limpa todos os campos do formulário de pessoa."""
+        entry_cpf.delete(0, tk.END)
+        entry_nome.delete(0, tk.END)
+        entry_data_nascimento.delete(0, tk.END)
+        entry_nome_mae.delete(0, tk.END)
+        entry_email.delete(0, tk.END)
+        entry_telefone.delete(0, tk.END)
+        lbl_status_cpf.config(text="")
+
+    def executar_cadastro_aluno():
+        dados = (
+            entry_cpf.get(),
+            entry_nome.get(),
+            entry_data_nascimento.get(),
+            entry_nome_mae.get(),
+            entry_email.get(),
+            entry_telefone.get()
+        )
+        sucesso, msg = cadastrar_aluno(
+            entry_nome.get(), 
+            entry_cpf.get(), 
+            entry_data_nascimento.get(), 
+            entry_nome_mae.get(), 
+            entry_email.get(), 
+            entry_telefone.get()
+        )
+        if sucesso:
+            limpar_campos_pessoa()
+            mostrar_janela_confirmacao("Aluno", dados)
+        else:
+            from tkinter import messagebox
+            messagebox.showerror("Erro", msg)
+
+    def executar_cadastro_professor():
+        dados = (
+            entry_cpf.get(),
+            entry_nome.get(),
+            entry_data_nascimento.get(),
+            entry_nome_mae.get(),
+            entry_email.get(),
+            entry_telefone.get()
+        )
+        sucesso, msg = cadastrar_professor(
+            entry_nome.get(), 
+            entry_cpf.get(), 
+            entry_data_nascimento.get(), 
+            entry_nome_mae.get(), 
+            entry_email.get(), 
+            entry_telefone.get()
+        )
+        if sucesso:
+            limpar_campos_pessoa()
+            mostrar_janela_confirmacao("Professor", dados)
+        else:
+            from tkinter import messagebox
+            messagebox.showerror("Erro", msg)
+
     # Botões de cadastro de aluno e professor
     btn_cadastrar_aluno = tk.Button(
         aba_pessoas,
-        text="Cadastrar Aluno", command= lambda: cadastrar_aluno(
-        entry_nome.get(), 
-        entry_cpf.get(), 
-        entry_data_nascimento.get(), 
-        entry_nome_mae.get(), 
-        entry_email.get(), 
-        entry_telefone.get())
+        text="Cadastrar Aluno", 
+        command=executar_cadastro_aluno
         )
     btn_cadastrar_aluno.pack(padx=10)
 
     btn_cadastrar_professor = tk.Button(
         aba_pessoas, 
-        text="Cadastrar Professor", command= lambda: cadastrar_professor(
-        entry_nome.get(), 
-        entry_cpf.get(), 
-        entry_data_nascimento.get(), 
-        entry_nome_mae.get(), 
-        entry_email.get(), 
-        entry_telefone.get()))
+        text="Cadastrar Professor", 
+        command=executar_cadastro_professor)
     btn_cadastrar_professor.pack(pady=10)
 
     # Cadastrar Cursos
     lbl_titulo_cursos = tk.Label(aba_cursos, text="Cadastro de Cursos")
     lbl_titulo_cursos.pack(pady=10)
 
-    # Implemente os campos para cadastrar cursos
+    # Campos para cadastrar cursos
     lbl_nome_curso = tk.Label(aba_cursos, text="Nome do Curso:")
     lbl_nome_curso.pack()
     entry_nome_curso = tk.Entry(aba_cursos)
@@ -115,7 +207,7 @@ def tela_cadastro(root):
     lbl_titulo_turmas = tk.Label(aba_turmas, text="Cadastro de Turmas",)
     lbl_titulo_turmas.pack()
 
-    # Implemente os campos para cadastrar turmas
+    # Campos para cadastrar turmas
     lbl_nome_turma = tk.Label(aba_turmas, text="Nome do Curso:")
     lbl_nome_turma.pack()
     entry_nome_turma = tk.Entry(aba_turmas)
@@ -129,7 +221,10 @@ def tela_cadastro(root):
     # Botão de cadastro de turma
     btn_cadastrar_turma = tk.Button(aba_turmas,
                                     text="Cadastrar Turma",
-                                    command=lambda: cadastar_turma())
+                                    command=lambda: cadastrar_turma(
+                                        entry_nome_turma.get(),
+                                        entry_professor_turma.get()
+                                    ))
     btn_cadastrar_turma.pack()
     
     lbl_titulo_aluno_turma = tk.Label(aba_aluno_turma, text="Cadastro de Aluno em Turma")
@@ -138,7 +233,7 @@ def tela_cadastro(root):
     lbl_aluno_turma = tk.Label(aba_aluno_turma, text="Escolha o Aluno e a Turma:")
     lbl_aluno_turma.pack()
 
-    # Implemente os campos para cadastrar aluno em turma
+    # Campos para cadastrar aluno em turma
     lbl_aluno = tk.Label(aba_aluno_turma, text="Aluno:")
     lbl_aluno.pack()
     entry_aluno = tk.Entry(aba_aluno_turma)
@@ -151,8 +246,12 @@ def tela_cadastro(root):
 
     # Botão de cadastro de aluno em turma
     btn_cadastrar_aluno_turma = tk.Button(
-        aba_aluno_turma, text="Cadastrar Aluno em Turma")
-    
+        aba_aluno_turma, 
+        text="Cadastrar Aluno em Turma",
+        command=lambda: cadastrar_aluno_turma(
+            entry_aluno.get(),
+            entry_turma.get()
+        ))
     btn_cadastrar_aluno_turma.pack()
     
     
@@ -224,8 +323,7 @@ def tela_listagem_cursos(root):
     dados = listar_cursos()
 
     for curso in dados:
-        tree.insert('','end', values=(curso[0], curso[1], curso[2]))
-    
+        tree.insert('', 'end', values=curso)
     
     tree.pack(fill="both", expand=True)
 
@@ -253,7 +351,7 @@ def tela_listagem_turmas(root):
     dados = listar_turmas()
 
     for turma in dados:
-        tree.insert('', 'end', values=dados)
+        tree.insert('', 'end', values=turma)
 
     tree.pack(fill="both", expand=True)
 
@@ -268,8 +366,6 @@ def tela_alteracao(root):
     aba_pessoas = ttk.Frame(abas)
 
     abas.add(aba_pessoas, text="Alterar Pessoas")
-
-    # Restante do código da tela de cadastro igual ao anterior
 
     # Alterar Pessoas
     lbl_titulo_alteracao_pessoas = tk.Label(aba_pessoas, text="Alteração de Pessoas")
@@ -309,10 +405,10 @@ def tela_alteracao(root):
     entry_telefone = tk.Entry(aba_pessoas)
     entry_telefone.pack()
 
-    # lbl_rg_pessoa = tk.Label(aba_pessoas, text="RG da Pessoa:")
-    # lbl_rg_pessoa.pack()
-    # entry_rg_pessoa = tk.Entry(aba_pessoas)
-    # entry_rg_pessoa.pack()
+    lbl_rg_pessoa = tk.Label(aba_pessoas, text="RG da Pessoa:")
+    lbl_rg_pessoa.pack()
+    entry_rg_pessoa = tk.Entry(aba_pessoas)
+    entry_rg_pessoa.pack()
 
     # Botão de alterar pessoa
     btn_alterar_pessoa = tk.Button(aba_pessoas, 
@@ -351,17 +447,30 @@ def tela_exclusao(root):
     entry_cpf_pessoa = tk.Entry(tela_exclusao)
     entry_cpf_pessoa.pack()
 
+    # Label para mostrar resultado da exclusão
+    lbl_resultado = tk.Label(tela_exclusao, text="", fg="green")
+    lbl_resultado.pack(pady=10)
 
-    # -----------------IMPLEMENTAR LÓGICA DE EXCLUSÃO AQUI-----------------
-    
-    
-    
-    
-    
-    
-    # --------------------------------------------------------------------------
+    def executar_exclusao():
+        cpf = entry_cpf_pessoa.get()
+        if not cpf:
+            lbl_resultado.config(text="Por favor, informe o CPF.", fg="red")
+            return
+        
+        sucesso, mensagem = excluir_pessoa(cpf)
+        if sucesso:
+            lbl_resultado.config(text=mensagem, fg="green")
+            entry_nome_pessoa.delete(0, tk.END)
+            entry_cpf_pessoa.delete(0, tk.END)
+        else:
+            lbl_resultado.config(text=mensagem, fg="red")
+
     # Botão para executar a exclusão da pessoa
-    btn_excluir_pessoa = tk.Button(tela_exclusao, text="Excluir Pessoa")
+    btn_excluir_pessoa = tk.Button(
+        tela_exclusao, 
+        text="Excluir Pessoa",
+        command=executar_exclusao
+    )
     btn_excluir_pessoa.pack()    
 
 def tela_principal():
@@ -388,10 +497,10 @@ def tela_principal():
     btn_listar_turmas = tk.Button(root, text="Listar Turmas", command=lambda: tela_listagem_turmas(root))
     btn_listar_turmas.pack()
 
-    btn_atualizacao = tk.Button(root, text="Atualização", state="disabled", command=lambda: tela_alteracao(root))
+    btn_atualizacao = tk.Button(root, text="Atualização", command=lambda: tela_alteracao(root))
     btn_atualizacao.pack()
 
-    btn_exclusao = tk.Button(root, text="Exclusão", state="disabled", command=lambda: tela_exclusao(root))
+    btn_exclusao = tk.Button(root, text="Exclusão", command=lambda: tela_exclusao(root))
     btn_exclusao.pack()
 
     root.mainloop()
